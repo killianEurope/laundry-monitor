@@ -14,6 +14,7 @@ DOWN = {0, 3, 5}                   # error / out of order / not available
 WEEKDAYS = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
 HOURS = range(7, 23)
 POLL_MINUTES = 5
+MIN_SAMPLES = 3  # a cell needs this many polls to be recommended as a quiet slot
 
 
 def group_of(type_name):
@@ -92,7 +93,7 @@ def shade(p):
     return f"{icon}{round(p * 100)}"
 
 
-def section(days, now, polls, states, types, events):
+def section(days, now, polls, states, types, events, open_hours):
     start = now - timedelta(days=days)
     idx = [k for k, p in enumerate(polls) if p > start]
     lines = [f"## 最近 {days} 天", ""]
@@ -151,10 +152,15 @@ def section(days, now, polls, states, types, events):
         lines += [f"### {g}：各时段平均占用率（%）", "", "| 时 | " + " | ".join(WEEKDAYS) + " |", "|---|" + ":-:|" * 7]
         for h in HOURS:
             lines.append(f"| {h:02d} | " + " | ".join(shade(avg.get((d, h))) for d in range(7)) + " |")
-        best = sorted((v, d, h) for (d, h), v in avg.items() if h in HOURS)[:5]
+        best = sorted(
+            (s / n, -n, d, h) for (d, h), (s, n) in acc.items() if h in open_hours and n >= MIN_SAMPLES
+        )[:5]
         if best:
             lines.append("")
-            lines.append("最空的时段：" + "，".join(f"{WEEKDAYS[d]} {h:02d}点（{v:.0%}）" for v, d, h in best))
+            lines.append(
+                f"最空的时段（有人用过的钟点里、样本 ≥{MIN_SAMPLES} 次）："
+                + "，".join(f"{WEEKDAYS[d]} {h:02d}点（{v:.0%}，{-n}次）" for v, n, d, h in best)
+            )
         lines.append("")
     return lines
 
@@ -175,10 +181,18 @@ def main():
         now = polls[-1]
         states = states_at_polls(polls, changes)
         events = cycle_events(changes)
+        # hours (Paris) in which any machine was ever seen busy; the others are probably closing hours
+        open_hours = {
+            polls[k].astimezone(TZ).hour for k in range(len(polls)) if any(seq[k] in BUSY for seq in states.values())
+        }
+        closed = [h for h in HOURS if h not in open_hours]
+        if closed:
+            out.append(f"> 以下钟点从没观察到有人使用（可能已关门），不参与推荐：{'、'.join(f'{h:02d}点' for h in closed)}")
+            out.append("")
         out.append(f"_更新于 {datetime.now(timezone.utc).astimezone(TZ):%Y-%m-%d %H:%M}（巴黎时间）_")
         out.append("")
         for days in (7, 30):
-            out += section(days, now, polls, states, types, events)
+            out += section(days, now, polls, states, types, events, open_hours)
     with open(os.path.join(ROOT, "README.md"), "w", encoding="utf-8") as f:
         f.write("\n".join(out) + "\n")
     print("README.md written")

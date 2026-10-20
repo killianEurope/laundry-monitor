@@ -1,14 +1,18 @@
-"""Poll the Wi-line public status API once and log changes.
+"""Poll the Wi-line public status API and log changes.
+
+Usage: python collect.py [--polls N] [--interval SECONDS]
 
 Files written (one per month, UTC):
   data/polls-YYYY-MM.csv    one line per successful poll (coverage log)
   data/changes-YYYY-MM.csv  one line per machine whose status or virtu_off changed
   data/last_state.json      state seen at the previous poll
 """
+import argparse
 import csv
 import json
 import os
 import sys
+import time
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
@@ -36,8 +40,7 @@ def append_csv(path, header, rows):
         w.writerows(rows)
 
 
-def main():
-    os.makedirs(DATA_DIR, exist_ok=True)
+def poll_once():
     try:
         machines = fetch()
     except Exception as e:  # network hiccup: skip this poll, don't fail the job
@@ -69,6 +72,18 @@ def main():
     with open(STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=0, sort_keys=True)
     print(f"{ts}: {len(machines)} machines, {len(changes)} changes")
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--polls", type=int, default=1, help="number of polls in this run")
+    ap.add_argument("--interval", type=int, default=300, help="seconds between polls")
+    args = ap.parse_args()
+    os.makedirs(DATA_DIR, exist_ok=True)
+    for i in range(args.polls):
+        if i:
+            time.sleep(args.interval)
+        poll_once()
 
 
 if __name__ == "__main__":
