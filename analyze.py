@@ -3,7 +3,7 @@ import csv
 import glob
 import os
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -33,6 +33,11 @@ def group_of(type_name):
 
 
 MAIN_GROUPS = ["洗衣机 8kg", "洗衣机 18kg", "烘干机"]
+
+# EUR incl. VAT. Washers and dryer come from the shop's price list; detergent and softener are guesses.
+PRICES = {"洗衣机 8kg": 5.5, "洗衣机 18kg": 11.0, "洗衣液": 1.0, "柔顺剂": 0.5}
+DRYER_EUR_PER_10MIN = 2.0
+VAT = 0.20
 
 
 def parse_ts(s):
@@ -93,7 +98,64 @@ def shade(p):
     return f"{icon}{round(p * 100)}"
 
 
-def section(days, now, polls, states, types, events, open_hours):
+def dryer_minutes_per_event(polls, states, types, events):
+    """Average dryer minutes paid per payment.
+
+    Over the last 7 days, busy dryer-minutes per minute is measured only where polls are at most
+    10 min apart, then divided by payments per minute over the whole 7 days. Pairing busy time
+    with the payments seen in the same short windows would undercount sessions cut off when a
+    run ends; using older, sparser weeks would undercount payments.
+    """
+    dryers = [no for no, t in types.items() if group_of(t) == "烘干机"]
+    start = polls[-1] - timedelta(days=7)
+    busy = dense_min = 0.0
+    for k in range(1, len(polls)):
+        gap = (polls[k] - polls[k - 1]).total_seconds() / 60
+        if polls[k - 1] > start and gap <= 10:
+            dense_min += gap
+            busy += gap * sum(states[no][k - 1] in BUSY for no in dryers)
+    span = (polls[-1] - max(start, polls[0])).total_seconds() / 60
+    n = sum(1 for no, ts in events if no in dryers and ts > start)
+    return (busy / dense_min) / (n / span) if dense_min and n else 20.0
+
+
+def revenue(counts, minutes_per_dryer_event):
+    """counts: group -> number of uses. Returns (EUR incl. VAT, dryer minutes)."""
+    dryer_min = counts.get("烘干机", 0) * minutes_per_dryer_event
+    eur = sum(PRICES.get(g, 0) * n for g, n in counts.items()) + dryer_min / 10 * DRYER_EUR_PER_10MIN
+    return eur, dryer_min
+
+
+def weekly_revenue(polls, types, events, mpe):
+    first, last = polls[0].astimezone(TZ), polls[-1].astimezone(TZ)
+    weeks = defaultdict(lambda: defaultdict(int))
+    for no, ts in events:
+        d = ts.astimezone(TZ).date()
+        weeks[d - timedelta(days=d.weekday())][group_of(types[no])] += 1
+    lines = [
+        "## 每周收入估算",
+        "",
+        f"价目表：8kg 洗衣 {PRICES['洗衣机 8kg']} €、18kg 洗衣 {PRICES['洗衣机 18kg']} €、烘干 {DRYER_EUR_PER_10MIN} €/10 分钟；"
+        f"洗衣液 {PRICES['洗衣液']} €、柔顺剂 {PRICES['柔顺剂']} € 是假设价。"
+        f"烘干时长按实测每次付款平均 {mpe:.0f} 分钟估算。价格均含 20% 增值税。",
+        "",
+        "| 周（周一–周日） | 8kg | 18kg | 烘干（分钟） | 洗衣液/柔顺剂 | 收入（含税） | 不含税 |",
+        "|---|---:|---:|---:|---:|---:|---:|",
+    ]
+    for wk in sorted(weeks):
+        c = weeks[wk]
+        eur, dryer_min = revenue(c, mpe)
+        wk_start = datetime.combine(wk, time.min, TZ)
+        partial = first > wk_start + timedelta(hours=7) or last < wk_start + timedelta(days=7)
+        label = f"{wk:%m-%d}–{wk + timedelta(days=6):%m-%d}" + ("（不完整）" if partial else "")
+        lines.append(
+            f"| {label} | {c['洗衣机 8kg']} | {c['洗衣机 18kg']} | {dryer_min:.0f} | {c['洗衣液']}/{c['柔顺剂']} "
+            f"| {eur:,.0f} € | {eur / (1 + VAT):,.0f} € |"
+        )
+    return lines + [""]
+
+
+def section(days, now, polls, states, types, events, open_hours, mpe):
     start = now - timedelta(days=days)
     idx = [k for k, p in enumerate(polls) if p > start]
     lines = [f"## 最近 {days} 天", ""]
@@ -112,11 +174,15 @@ def section(days, now, polls, states, types, events, open_hours):
 
     # cycles per machine and per group
     cyc = defaultdict(int)
+    per_group = defaultdict(int)
     daily = defaultdict(lambda: defaultdict(int))
     for no, ts in events:
         if ts > start:
             cyc[no] += 1
+            per_group[group_of(types[no])] += 1
             daily[ts.astimezone(TZ).date()][group_of(types[no])] += 1
+    eur, _ = revenue(per_group, mpe)
+    lines += [f"**收入估算：约 {eur:,.0f} €（含税），不含税约 {eur / (1 + VAT):,.0f} €**", ""]
 
     # busy share per machine
     busy_share = {}
@@ -191,8 +257,10 @@ def main():
             out.append("")
         out.append(f"_更新于 {datetime.now(timezone.utc).astimezone(TZ):%Y-%m-%d %H:%M}（巴黎时间）_")
         out.append("")
+        mpe = dryer_minutes_per_event(polls, states, types, events)
+        out += weekly_revenue(polls, types, events, mpe)
         for days in (7, 30):
-            out += section(days, now, polls, states, types, events, open_hours)
+            out += section(days, now, polls, states, types, events, open_hours, mpe)
     with open(os.path.join(ROOT, "README.md"), "w", encoding="utf-8") as f:
         f.write("\n".join(out) + "\n")
     print("README.md written")
