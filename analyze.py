@@ -231,6 +231,128 @@ def section(days, now, polls, states, types, events, open_hours, mpe):
     return lines
 
 
+FACTORY_KIND = {"mal": "洗衣", "sec": "烘干", "ddc": "洗衣液"}
+
+
+def parse_start(s):
+    return datetime.strptime(s, "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
+
+
+def factory_cycles():
+    """Laverie Factory: one cycle per new started_at value seen after the first poll.
+
+    Returns (polls, machines, cycles): machines maps machine_no to its latest row, cycles is a
+    list of (machine_no, start, duration_min, price_eur).
+    """
+    polls = sorted(parse_ts(r["ts_utc"]) for r in read_rows("factory/polls-*.csv"))
+    by = defaultdict(list)
+    for r in read_rows("factory/changes-*.csv"):
+        by[r["machine_no"]].append(r)
+    machines, cycles = {}, []
+    for no, rows in by.items():
+        rows.sort(key=lambda r: r["ts_utc"])
+        machines[no] = rows[-1]
+        prev = None
+        for r in rows:
+            if prev is not None and r["started_at"] and r["started_at"] != prev:
+                dur = float(r["duration_min"]) if r["duration_min"] else 0.0
+                cycles.append((no, parse_start(r["started_at"]), dur, float(r["price_eur"])))
+            if r["started_at"]:
+                prev = r["started_at"]
+    return polls, machines, cycles
+
+
+def factory_section(richter_7d):
+    polls, machines, cycles = factory_cycles()
+    lines = [
+        "## 竞争对手：Laverie Factory Port Marianne（约 420 m）",
+        "",
+        "数据来自该店 Touch'n Pay 公开机器页面；每次启动按该机器标价（含税）计入收入。"
+        "“规格”是接口里的 special_val，可能是容量（kg）。",
+        "",
+    ]
+    if not polls:
+        return lines + ["还没有数据。", ""]
+    first, now = polls[0], polls[-1]
+    lines += [f"数据从 {first.astimezone(TZ):%Y-%m-%d %H:%M}（巴黎时间）开始。", ""]
+    kind = {no: FACTORY_KIND.get(r["kind"], r["kind"]) for no, r in machines.items()}
+
+    # weekly revenue
+    weeks = defaultdict(lambda: defaultdict(float))
+    for no, start, _, price in cycles:
+        d = start.astimezone(TZ).date()
+        w = weeks[d - timedelta(days=d.weekday())]
+        w[kind[no]] += 1
+        w["eur"] += price
+    lines += [
+        "### 每周收入估算",
+        "",
+        "| 周（周一–周日） | 洗衣（次） | 烘干（次） | 洗衣液（次） | 收入（含税） | 不含税 |",
+        "|---|---:|---:|---:|---:|---:|",
+    ]
+    for wk in sorted(weeks):
+        c = weeks[wk]
+        wk_start = datetime.combine(wk, time.min, TZ)
+        partial = first > wk_start + timedelta(hours=7) or now < wk_start + timedelta(days=7)
+        label = f"{wk:%m-%d}–{wk + timedelta(days=6):%m-%d}" + ("（不完整）" if partial else "")
+        lines.append(
+            f"| {label} | {c['洗衣']:.0f} | {c['烘干']:.0f} | {c['洗衣液']:.0f} "
+            f"| {c['eur']:,.0f} € | {c['eur'] / (1 + VAT):,.0f} € |"
+        )
+    lines.append("")
+
+    # per machine, last 7 days
+    start7 = now - timedelta(days=7)
+    window_min = (now - max(start7, first)).total_seconds() / 60
+    uses, eur, busy_min = defaultdict(int), defaultdict(float), defaultdict(float)
+    for no, start, dur, price in cycles:
+        if start > start7:
+            uses[no] += 1
+            eur[no] += price
+            busy_min[no] += dur
+    lines += [
+        "### 最近 7 天每台机器",
+        "",
+        "| 编号 | 名称 | 规格 | 标价 | 使用次数 | 收入 | 占用率 | 备注 |",
+        "|---:|---|---:|---:|---:|---:|---:|---|",
+    ]
+    for no in sorted(machines, key=int):
+        r = machines[no]
+        note = []
+        if r["in_service"] == "1":
+            note.append("维护中")
+        if kind[no] != "洗衣液" and r["started_at"] and now - parse_start(r["started_at"]) > timedelta(days=3):
+            note.append(f"最近一次启动 {parse_start(r['started_at']).astimezone(TZ):%m-%d}，可能停用")
+        occ = f"{busy_min[no] / window_min:.0%}" if kind[no] != "洗衣液" and window_min > 0 else "-"
+        lines.append(
+            f"| {no} | {r['name']} | {r['spec']} | {float(r['price_eur']):.2f} € | {uses[no]} | {eur[no]:,.0f} € "
+            f"| {occ} | {'；'.join(note)} |"
+        )
+    lines.append("")
+
+    # side by side with Laverie Richter
+    f_counts = defaultdict(int)
+    for no, start, _, _ in cycles:
+        if start > start7:
+            f_counts[kind[no]] += 1
+    f_eur = sum(eur.values())
+    r_counts, r_eur, r_washers = richter_7d
+    lines += [
+        "### 和 Laverie Richter 对比（最近 7 天）",
+        "",
+        "| | Laverie Richter | Laverie Factory |",
+        "|---|---:|---:|",
+        f"| 洗衣机台数 | {r_washers} | {sum(1 for k in kind.values() if k == '洗衣')} |",
+        f"| 洗衣次数 | {r_counts.get('洗衣机 8kg', 0) + r_counts.get('洗衣机 18kg', 0)} | {f_counts['洗衣']} |",
+        f"| 烘干次数 | {r_counts.get('烘干机', 0)} | {f_counts['烘干']} |",
+        f"| 收入（含税） | {r_eur:,.0f} € | {f_eur:,.0f} € |",
+    ]
+    if first > start7:
+        lines.append("")
+        lines.append("> ⚠️ 竞争对手记录不足 7 天，对比只供参考。")
+    return lines + [""]
+
+
 def main():
     polls, changes, types = load()
     out = [
@@ -261,6 +383,12 @@ def main():
         out += weekly_revenue(polls, types, events, mpe)
         for days in (7, 30):
             out += section(days, now, polls, states, types, events, open_hours, mpe)
+        counts7 = defaultdict(int)
+        for no, ts in events:
+            if ts > now - timedelta(days=7):
+                counts7[group_of(types[no])] += 1
+        washers = sum(1 for t in types.values() if group_of(t) in ("洗衣机 8kg", "洗衣机 18kg"))
+        out += factory_section((counts7, revenue(counts7, mpe)[0], washers))
     with open(os.path.join(ROOT, "README.md"), "w", encoding="utf-8") as f:
         f.write("\n".join(out) + "\n")
     print("README.md written")
