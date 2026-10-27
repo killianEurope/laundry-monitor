@@ -9,7 +9,7 @@
 "in_service": false,
 "price": "1000",
 "started_at": "2026-10-26T20:52:25",
-"state": "1"
+"state": "0"
 },
 "11": {
 "in_service": false,
@@ -26,7 +26,7 @@
 "14": {
 "in_service": false,
 "price": "300",
-"started_at": "2026-10-26T21:28:36",
+"started_at": "2026-10-26T22:11:44",
 "state": "0"
 },
 "15": {
