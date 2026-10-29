@@ -8,61 +8,61 @@
 "10": {
 "in_service": false,
 "price": "1000",
-"started_at": "2026-10-29T13:37:17",
-"state": "1"
+"started_at": "2026-10-29T18:03:12",
+"state": "0"
 },
 "11": {
 "in_service": false,
 "price": "1000",
-"started_at": "2026-10-29T13:00:27",
+"started_at": "2026-10-29T16:08:38",
 "state": "0"
 },
 "13": {
 "in_service": false,
 "price": "300",
-"started_at": "2026-10-29T13:50:54",
+"started_at": "2026-10-29T18:48:44",
 "state": "0"
 },
 "14": {
 "in_service": false,
 "price": "300",
-"started_at": "2026-10-29T14:07:21",
+"started_at": "2026-10-29T19:10:15",
 "state": "0"
 },
 "15": {
 "in_service": false,
 "price": "300",
-"started_at": "2026-10-29T13:52:39",
+"started_at": "2026-10-29T19:12:19",
 "state": "0"
 },
 "16": {
 "in_service": false,
 "price": "300",
-"started_at": "2026-10-29T10:37:22",
+"started_at": "2026-10-29T18:38:41",
 "state": "0"
 },
 "17": {
 "in_service": false,
 "price": "90",
-"started_at": "2026-10-26T18:30:04",
+"started_at": "2026-10-29T17:42:24",
 "state": "1"
 },
 "18": {
 "in_service": false,
 "price": "90",
-"started_at": "2026-10-28T13:14:16",
+"started_at": "2026-10-29T16:22:22",
 "state": "1"
 },
 "19": {
 "in_service": false,
 "price": "90",
-"started_at": "2026-10-28T09:50:31",
+"started_at": "2026-10-29T14:49:47",
 "state": "1"
 },
 "2": {
 "in_service": false,
 "price": "590",
-"started_at": "2026-10-28T18:22:52",
+"started_at": "2026-10-29T16:47:30",
 "state": "0"
 },
 "20": {
@@ -104,19 +104,19 @@
 "4": {
 "in_service": false,
 "price": "500",
-"started_at": "2026-10-29T09:47:30",
+"started_at": "2026-10-29T17:42:24",
 "state": "0"
 },
 "5": {
 "in_service": false,
 "price": "500",
-"started_at": "2026-10-28T16:54:41",
+"started_at": "2026-10-29T17:23:12",
 "state": "0"
 },
 "6": {
 "in_service": false,
 "price": "500",
-"started_at": "2026-10-29T09:05:35",
+"started_at": "2026-10-29T18:25:17",
 "state": "0"
 },
 "7": {
