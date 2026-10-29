@@ -148,3 +148,4 @@ ts_utc,machine_no,name,kind,spec,price_eur,state,in_service,started_at,duration_
 2026-10-28T21:17:02Z,6,Machine 6,mal,6,5.0,0,0,2026-10-28T18:55:05,40
 2026-10-28T21:17:02Z,2,Machine 2,mal,6,5.9,0,0,2026-10-28T18:22:52,45
 2026-10-28T21:17:02Z,3,Machine 3,mal,6,5.9,0,0,2026-10-28T18:10:13,40
+2026-10-29T01:01:10Z,16,SECHOIR 16,sec,15,3.0,0,0,2026-10-28T21:37:48,16
