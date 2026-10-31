@@ -9,7 +9,7 @@
 "in_service": false,
 "price": "1000",
 "started_at": "2026-10-31T18:38:24",
-"state": "1"
+"state": "0"
 },
 "11": {
 "in_service": false,
@@ -20,13 +20,13 @@
 "13": {
 "in_service": false,
 "price": "300",
-"started_at": "2026-10-31T17:36:53",
+"started_at": "2026-10-31T22:12:25",
 "state": "0"
 },
 "14": {
 "in_service": false,
 "price": "300",
-"started_at": "2026-10-31T17:46:42",
+"started_at": "2026-10-31T20:55:54",
 "state": "0"
 },
 "15": {
@@ -128,13 +128,13 @@
 "8": {
 "in_service": false,
 "price": "1200",
-"started_at": "2026-10-31T14:50:56",
+"started_at": "2026-10-31T19:48:54",
 "state": "0"
 },
 "9": {
 "in_service": false,
 "price": "1200",
-"started_at": "2026-10-31T14:24:07",
+"started_at": "2026-10-31T20:01:32",
 "state": "0"
 }
 }
