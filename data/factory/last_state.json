@@ -32,7 +32,7 @@
 "15": {
 "in_service": false,
 "price": "300",
-"started_at": "2026-11-03T19:52:41",
+"started_at": "2026-11-03T21:55:59",
 "state": "0"
 },
 "16": {
@@ -63,7 +63,7 @@
 "in_service": false,
 "price": "590",
 "started_at": "2026-11-03T21:08:41",
-"state": "1"
+"state": "0"
 },
 "20": {
 "in_service": false,
@@ -99,7 +99,7 @@
 "in_service": false,
 "price": "590",
 "started_at": "2026-11-03T21:09:16",
-"state": "1"
+"state": "0"
 },
 "4": {
 "in_service": false,
