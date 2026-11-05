@@ -8,8 +8,8 @@
 "10": {
 "in_service": false,
 "price": "1000",
-"started_at": "2026-11-05T08:03:35",
-"state": "0"
+"started_at": "2026-11-05T16:57:53",
+"state": "1"
 },
 "11": {
 "in_service": false,
@@ -20,7 +20,7 @@
 "13": {
 "in_service": false,
 "price": "300",
-"started_at": "2026-11-05T00:04:38",
+"started_at": "2026-11-05T16:40:41",
 "state": "0"
 },
 "14": {
@@ -32,13 +32,13 @@
 "15": {
 "in_service": false,
 "price": "300",
-"started_at": "2026-11-04T21:26:16",
+"started_at": "2026-11-05T15:42:25",
 "state": "0"
 },
 "16": {
 "in_service": false,
 "price": "300",
-"started_at": "2026-11-05T08:13:30",
+"started_at": "2026-11-05T12:53:36",
 "state": "0"
 },
 "17": {
@@ -50,20 +50,20 @@
 "18": {
 "in_service": false,
 "price": "90",
-"started_at": "2026-11-04T21:14:13",
+"started_at": "2026-11-05T15:25:37",
 "state": "1"
 },
 "19": {
 "in_service": false,
 "price": "90",
-"started_at": "2026-11-03T15:15:27",
+"started_at": "2026-11-05T13:49:49",
 "state": "1"
 },
 "2": {
 "in_service": false,
 "price": "590",
 "started_at": "2026-11-05T08:15:43",
-"state": "1"
+"state": "0"
 },
 "20": {
 "in_service": false,
@@ -86,7 +86,7 @@
 "23": {
 "in_service": false,
 "price": "160",
-"started_at": "2026-11-03T08:01:14",
+"started_at": "2026-11-05T16:57:53",
 "state": "1"
 },
 "24": {
@@ -104,19 +104,19 @@
 "4": {
 "in_service": false,
 "price": "500",
-"started_at": "2026-11-04T17:19:23",
+"started_at": "2026-11-05T15:10:33",
 "state": "0"
 },
 "5": {
 "in_service": false,
 "price": "500",
-"started_at": "2026-11-04T21:14:13",
+"started_at": "2026-11-05T15:25:37",
 "state": "0"
 },
 "6": {
 "in_service": false,
 "price": "500",
-"started_at": "2026-11-05T07:32:56",
+"started_at": "2026-11-05T15:01:54",
 "state": "0"
 },
 "7": {
@@ -128,8 +128,8 @@
 "8": {
 "in_service": false,
 "price": "1200",
-"started_at": "2026-11-05T08:11:16",
-"state": "1"
+"started_at": "2026-11-05T10:34:13",
+"state": "0"
 },
 "9": {
 "in_service": false,
