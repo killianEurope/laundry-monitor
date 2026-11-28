@@ -920,3 +920,4 @@ ts_utc,machine_no,name,kind,spec,price_eur,state,in_service,started_at,duration_
 2026-11-27T20:05:10Z,2,Machine 2,mal,6,5.9,0,0,2026-11-27T16:15:40,45
 2026-11-27T20:05:10Z,3,Machine 3,mal,6,5.9,0,0,2026-11-27T13:28:56,40
 2026-11-27T20:05:10Z,8,Machine 8,mal,20,12.0,0,0,2026-11-27T15:48:17,40
+2026-11-28T02:42:08Z,10,Machine 10,mal,14,10.0,0,0,2026-11-28T02:04:47,40
